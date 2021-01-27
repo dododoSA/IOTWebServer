@@ -729,6 +729,7 @@ function piano() {
 		};
 	});
 	canvas.addEventListener("mouseup", e => {
+		freq = 0;
 		e.preventDefault();
 		for(var i in key.white){
 			key.white[i].normal(context, canvas);
