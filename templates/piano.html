@@ -1,0 +1,783 @@
+<html lang = "ja">
+<head>
+<meta charset = "UTF-8">
+<style type = "text/css">
+body {
+	font-family: "Helvetica Neue",
+	Arial,
+	"Hiragino Kaku Gothic ProN",
+	"Hiragino Sans",
+	Meiryo,
+	sans-serif;
+}
+.piano {
+	position: relative;
+	margin: auto;
+	width: 720px;
+	height: 350px;
+	background: linear-gradient(#333333, #000000);
+	align: center;
+}
+.staff {
+	position: relative;
+	margin: auto;
+	width: 1045px;
+	height: 300px;
+	background: #ffffff;
+	align: center;
+}
+</style>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script type = "text/javascript">
+
+let freq = 0; // サーバーに送信する周波数
+
+////////////////////////////鍵盤のベース
+class BaseKey {
+	constructor(x, onkai){
+		this.x = x;
+		this.onkai = onkai;
+	}
+////////////////////////////通常の表示
+	normal(){}
+////////////////////////////押された時の表示
+	flag(){}
+////////////////////////////座標のチェック
+	check(){}
+
+	getOnkai() {
+		return this.onkai;
+	}
+}
+
+////////////////////////////左側の鍵盤
+class Left extends BaseKey {
+	constructor(x, onkai){
+		super(x, onkai);
+	}
+	
+	normal(context, canvas){
+		var white_grad = canvas.getContext('2d');
+		var white_grad = context.createLinearGradient(0,45,0,345);
+		white_grad.addColorStop(0.0, 'rgb(225,225,225)');
+		white_grad.addColorStop(1.0, 'rgb(255,255,255)');
+		
+		context.save();
+		context.fillStyle = white_grad;
+		context.fillRect(this.x,45,36,300);
+		context.fillRect(this.x+36,235,10,110);
+		context.restore();
+	}
+	
+	flag(context, canvas){
+		var white_grad = canvas.getContext('2d');
+		var white_grad = context.createLinearGradient(0,45,0,345);
+		white_grad.addColorStop(0.0, 'rgb(255,255,255)');
+		white_grad.addColorStop(1.0, 'rgb(255,100,100)');
+		
+		context.save();
+		context.fillStyle = white_grad;
+		context.fillRect(this.x,45,36,300);
+		context.fillRect(this.x+36,235,10,110);
+		context.restore();
+	}
+	
+	check(point){
+		return (
+			((this.x <= point.x && point.x <= this.x + 36) && (45 <= point.y && point.y <= 345)) || ((this.x + 36 <= point.x && point.x <= this.x + 46) && (235 <= point.y && point.y <= 345))
+		);
+	}
+}
+////////////////////////////中央の鍵盤
+class Center extends BaseKey {
+	constructor(x, onkai){
+		super(x, onkai);
+	}
+	
+	normal(context, canvas){
+		var white_grad = canvas.getContext('2d');
+		var white_grad = context.createLinearGradient(0,45,0,345);
+		white_grad.addColorStop(0.0, 'rgb(225,225,225)');
+		white_grad.addColorStop(1.0, 'rgb(255,255,255)');
+		
+		context.save();
+		context.fillStyle = white_grad;
+		context.fillRect(this.x+10,45,26,190);
+		context.fillRect(this.x,235,46,110);
+		context.restore();
+	}
+	
+	flag(context, canvas){
+		var white_grad = canvas.getContext('2d');
+		var white_grad = context.createLinearGradient(0,45,0,345);
+		white_grad.addColorStop(0.0, 'rgb(255,255,255)');
+		white_grad.addColorStop(1.0, 'rgb(255,100,100)');
+		
+		context.save();
+		context.fillStyle = white_grad;
+		context.fillRect(this.x+10,45,26,190);
+		context.fillRect(this.x,235,46,110);
+		context.restore();
+	}
+	
+	check(point){
+		return (
+			((this.x + 10 <= point.x && point.x <= this.x + 36) && (45 <= point.y && point.y <= 235)) || ((this.x <= point.x && point.x <= this.x + 46) && (235 <= point.y && point.y <= 345))
+		);
+	}
+}
+////////////////////////////右側の鍵盤
+class Right extends BaseKey {
+	constructor(x, onkai){
+		super(x, onkai);
+	}
+	
+	normal(context, canvas){
+		var white_grad = canvas.getContext('2d');
+		var white_grad = context.createLinearGradient(0,45,0,345);
+		white_grad.addColorStop(0.0, 'rgb(225,225,225)');
+		white_grad.addColorStop(1.0, 'rgb(255,255,255)');
+		
+		context.save();
+		context.fillStyle = white_grad;
+		context.fillRect(this.x+10,45,36,300);
+		context.fillRect(this.x,235,10,110);
+		context.restore();
+	}
+	
+	flag(context, canvas){
+		var white_grad = canvas.getContext('2d');
+		var white_grad = context.createLinearGradient(0,45,0,345);
+		white_grad.addColorStop(0.0, 'rgb(255,255,255)');
+		white_grad.addColorStop(1.0, 'rgb(255,100,100)');
+		
+		context.save();
+		context.fillStyle = white_grad;
+		context.fillRect(this.x+10,45,36,300);
+		context.fillRect(this.x,235,10,110);
+		context.restore();
+	}
+	
+	check(point){
+		return (
+			((this.x + 10 <= point.x && point.x <= this.x + 46) && (45 <= point.y && point.y <= 345)) || ((this.x <= point.x && point.x <= this.x + 10) && (235 <= point.y && point.y <= 345))
+		);
+	}
+}
+////////////////////////////黒鍵
+class Black extends BaseKey {
+	constructor(x){
+		super(x);
+	}
+	
+	normal(context, canvas){
+		var black_grad1 = canvas.getContext('2d');
+		var black_grad2 = canvas.getContext('2d');
+		var black_grad1 = context.createLinearGradient(0,45,0,185);
+		var black_grad2 = context.createLinearGradient(0,230,0,5);
+		black_grad1.addColorStop(0.0, 'rgb(0,0,0)');
+		black_grad1.addColorStop(1.0, 'rgb(60,60,60)');
+		black_grad2.addColorStop(0.0, 'rgb(100,100,100)');
+		black_grad2.addColorStop(1.0, 'rgb(0,0,0)');
+		
+		context.save();
+		context.fillStyle = black_grad1;
+		context.fillRect(this.x,45,21,185);
+		context.fillStyle = black_grad2;
+		context.fillRect(this.x,230,21,5);
+		context.restore();
+	}
+	
+	flag(context, canvas){
+		var black_grad = canvas.getContext('2d');
+		var black_grad = context.createLinearGradient(0,0,0,180);
+		black_grad.addColorStop(0.0, 'rgb(0,0,0)');
+		black_grad.addColorStop(1.0, 'rgb(150,0,0)');
+		
+		context.save();
+		context.fillStyle = black_grad;
+		context.fillRect(this.x,45,21,190);
+		context.restore();
+	}
+	
+	check(point){
+		return (
+			(this.x <= point.x && point.x <= this.x + 21) && (45 <= point.y && point.y <= 235)
+		);
+	}
+}
+////////////////////////////ト音記号の表示
+function ToOn(to) {
+	to.save();
+	to.beginPath();
+	to.strokeStyle = 'black';
+	to.arc(27, 190, 6, 0, Math.PI * 2, true);
+	to.fillStyle = 'black';
+	to.fill();
+	to.moveTo(25,190);
+	to.arc(32,189,12,Math.PI*0.9,Math.PI*1.9,true);
+	to.lineTo(35,120);
+	to.stroke();
+	to.closePath();
+	to.restore();
+	to.save();
+	to.beginPath();
+	to.strokeStyle = 'black';
+	to.fillStyle = 'black';
+	to.moveTo(35,120);
+	to.quadraticCurveTo(32,91,45,85);
+	to.quadraticCurveTo(61,110,34,130);
+	to.quadraticCurveTo(17,146,20,160);
+	to.quadraticCurveTo(28,177,46,168);
+	to.quadraticCurveTo(53,160,47,152);
+	to.quadraticCurveTo(42,148,34,151);
+	to.quadraticCurveTo(26,159,36,166);
+	to.quadraticCurveTo(22,160,29,148);
+	to.quadraticCurveTo(34,138,48,143);
+	to.quadraticCurveTo(57,151,54,160);
+	to.quadraticCurveTo(51,173,34,172);
+	to.quadraticCurveTo(23,172,17,160);
+	to.quadraticCurveTo(11,144,23,130);
+	to.quadraticCurveTo(35,118,41,115);
+	to.quadraticCurveTo(50,108,49,97);
+	to.quadraticCurveTo(45,93,41,96);
+	to.quadraticCurveTo(35,102,35,120);
+	to.stroke();
+	to.fill();
+	to.closePath();
+	to.restore();
+}
+////////////////////////////音符の表示
+class Staff {
+	constructor(y){
+		this.y = y;
+	}
+////////////////////////////全音符の表示
+	beat1(x, context) {
+		let yy = 197.5-this.y*7.5;
+		context.save();
+		context.fillStyle = 'black';
+		context.strokeStyle = 'black';
+		context.beginPath();
+		context.ellipse(x+80,yy,9,6,0,0,Math.PI*2);
+		context.fill();
+		context.closePath();
+		context.beginPath();
+		context.globalCompositeOperation = 'destination-out';
+		context.ellipse(x+80,yy,6,3.5,-Math.PI*7/12,0,Math.PI*2);
+		context.fill();
+		context.restore;
+		context.globalCompositeOperation = 'source-over';
+	}
+////////////////////////////2分音符の表示
+	beat2(x, context) {
+		let yy = 197.5-this.y*7.5;
+		context.save();
+		context.fillStyle = 'black';
+		context.strokeStyle = 'black';
+		context.beginPath();
+		context.ellipse(x+80,yy,8,5,-Math.PI/6,0,Math.PI*2);
+		context.fill();
+		if(this.y <= 6){
+			context.moveTo(x+87,yy);
+			context.lineTo(x+87,145-this.y*7.5);
+		}else{
+			context.moveTo(x+72,yy);
+			context.lineTo(x+72,250-this.y*7.5);
+		};
+		context.stroke();
+		context.closePath();
+		context.beginPath();
+		context.globalCompositeOperation = 'destination-out';
+		context.ellipse(x+80,yy,7,3,-Math.PI/4,0,Math.PI*2);
+		context.fill();
+		context.restore;
+		context.globalCompositeOperation = 'source-over';
+	}
+////////////////////////////4分音符の表示
+	beat4(x, context) {
+		let yy = 197.5-this.y*7.5;
+		context.save();
+		context.fillStyle = 'black';
+		context.strokeStyle = 'black';
+		context.beginPath();
+		context.ellipse(x+80,yy,8,5,-Math.PI/6,0,Math.PI*2);
+		context.fill();
+		if(this.y <= 6){
+			context.moveTo(x+87,yy);
+			context.lineTo(x+87,yy-52.5);
+		}else{
+			context.moveTo(x+72,yy);
+			context.lineTo(x+72,yy+52.5);
+		};
+		context.stroke();
+		context.restore;
+	}
+////////////////////////////8分音符の表示
+	beat8(x, context) {
+		let yy = 197.5-this.y*7.5;
+		context.save();
+		context.fillStyle = 'black';
+		context.strokeStyle = 'black';
+		context.beginPath();
+		context.ellipse(x+80,yy,8,5,-Math.PI/6,0,Math.PI*2);
+		context.fill();
+		if(this.y <= 6){
+			context.moveTo(x+87,yy);
+			context.lineTo(x+87,yy-52.5);
+		}else{
+			context.moveTo(x+72,yy);
+			context.lineTo(x+72,yy+52.5);
+		};
+		context.stroke();
+		context.closePath();
+		context.beginPath();
+		if(this.y <= 6){
+			context.moveTo(x+87,yy-52.5);
+			context.quadraticCurveTo(x+87,yy-42,x+95,yy-30);
+			context.quadraticCurveTo(x+101,yy-21,x+94,yy-7.5);
+			context.quadraticCurveTo(x+102,yy-24,x+87,yy-37);
+		}else{
+			context.moveTo(x+72,yy+52.5);
+			context.quadraticCurveTo(x+72,yy+42,x+80,yy+30);
+			context.quadraticCurveTo(x+86,yy+21,x+79,yy+7.5);
+			context.quadraticCurveTo(x+87,yy+24,x+72,yy+37);
+		};
+		context.fill();
+		context.stroke();
+		context.restore;
+	}
+////////////////////////////16分音符の表示
+	beat16(x, context) {
+		let yy = 197.5-this.y*7.5;
+		context.save();
+		context.fillStyle = 'black';
+		context.strokeStyle = 'black';
+		context.beginPath();
+		context.ellipse(x+80,yy,8,5,-Math.PI/6,0,Math.PI*2);
+		context.fill();
+		if(this.y <= 6){
+			context.moveTo(x+87,yy);
+			context.lineTo(x+87,yy-52.5);
+		}else{
+			context.moveTo(x+72,yy);
+			context.lineTo(x+72,yy+52.5);
+		};
+		context.stroke();
+		context.closePath();
+		context.beginPath();
+		if(this.y <= 6){
+			context.moveTo(x+87,yy-52.5);
+			context.quadraticCurveTo(x+87,yy-44,x+95,yy-36);
+			context.quadraticCurveTo(x+101,yy-22,x+94,yy-22);
+			context.quadraticCurveTo(x+103,yy-29,x+87,yy-40);
+			context.quadraticCurveTo(x+89,yy-30,x+95,yy-23);
+			context.quadraticCurveTo(x+103,yy-10,x+94,yy);
+			context.quadraticCurveTo(x+104,yy-14,x+87,yy-29);
+		}else{
+			context.moveTo(x+72,yy+52.5);
+			context.quadraticCurveTo(x+72,yy+44,x+80,yy+36);
+			context.quadraticCurveTo(x+86,yy+22,x+79,yy+22);
+			context.quadraticCurveTo(x+88,yy+29,x+72,yy+40);
+			context.quadraticCurveTo(x+74,yy+30,x+80,yy+23);
+			context.quadraticCurveTo(x+88,yy+10,x+79,yy+5);
+			context.quadraticCurveTo(x+89,yy+14,x+72,yy+29);
+		};
+		context.fill();
+		context.stroke();
+		context.restore;
+	}
+////////////////////////////#の表示
+	sharp(x, context){
+		let yy = 197.5-this.y*7.5;
+		context.save();
+		context.beginPath();
+		context.moveTo(x+59, yy-20);
+		context.lineTo(x+59, yy+23);
+		context.moveTo(x+66, yy-23);
+		context.lineTo(x+66, yy+20);
+		for(let i = 0; i < 5; i++){
+			context.moveTo(x+56, yy-4-i);
+			context.lineTo(x+69, yy-9-i);
+		context.moveTo(x+56, yy+8+i);
+		context.lineTo(x+69, yy+3+i);
+		}
+		context.stroke();
+		context.restore();
+	}
+////////////////////////////消去
+	clear(x, context){
+		let yy = 197.5-this.y*7.5;
+		context.save();
+		if(this.y <= 6){
+			context.clearRect(x+71, yy-5, 17, 10);
+			context.clearRect(x+86, yy-53, 15, 56);
+		}else{
+			context.clearRect(x+71, yy-5, 17, 58);
+		}
+		context.restore();
+	}
+}
+
+////////////////////////////メインの実行
+function piano() {
+	const canvas = document.getElementById('sample');
+	const board = document.getElementById('board');
+	//                     ド　　　レ　　　ミ　　　ファ　ソ　　　ラ　　　シ　　　ド　　　レ　　ミ　　　ファ　　ソ　　　ラ　　シ　
+	const onkaiListW = [130.8, 146.8, 164.8, 174.6, 196.0, 220.0, 246.9, 261.6, 293.7, 329.6, 349.2, 392.0, 440.0, 493.9];
+	//                   ド＃　レ＃　　ファ＃　ソ＃　　ラ＃　　ド＃　レ＃　　ファ＃　ソ＃　　ラ＃
+	const onkaiListB = [138.6, 155.6, 185.0, 297.7, 233.1, 277.2, 311.1, 370.0, 415.3, 466.2];
+	var key = new Object();
+	var staff = new Object();
+	let flag = 0;
+	let t = 0;
+	let sx = -15; sy = 0; sx_p = -15; sy_p = 0; bit = 0;
+	let p = 0; pp = 0; pb = 0;
+	
+	var context = canvas.getContext('2d');
+	key.white = new Object();
+	key.black = new Object();
+	for(let i = 1; i < 15; i++){
+		const onkai = onkaiListW[i - 1];
+		if(i==1 || i==4 || i==8 || i==11){
+			key.white[i] = new Left(i*47 - 16, onkai);
+		}else if(i==3 || i==7 || i==10 || i==14){
+			key.white[i] = new Right(i*47 - 16, onkai);
+		}else{
+			key.white[i] = new Center(i*47 - 16, onkai);
+		}
+	}
+	let onkaiInd = 0;
+	for(let i = 1; i < 14; i++){
+		if(i != 3 && i != 7 && i != 10){
+			key.black[i] = new Black(20+i*47, onkaiListB[onkaiInd]);
+		}
+		onkaiInd++;
+	}
+	for(var i in key.white){
+		key.white[i].normal(context, canvas);
+	}
+	for(var i in key.black){
+		key.black[i].normal(context, canvas);
+	}
+	
+	var to = board.getContext('2d');
+	ToOn(to);
+	
+////////////////////////////繰り返し:始点
+	var line = board.getContext('2d');
+	setInterval(() => {
+		if(t >= 945){flag = 0; pb = 0; sx_p = -60; sy_p = 0;};
+		if(t == 0){
+			sx = -40; sy = 0; flag = 0;
+			line.clearRect(t+59,75,1000,140);
+		}else{
+			line.clearRect(t+79,75,2,140);
+		};
+////////////////////////////描画1回目
+		if((flag || sx + 30 > t) && t < 945 && sy){
+			if(flag && t - sx == 30){
+				staff.white[sy].clear(sx, beat);
+			}else if(t - sx == 60){
+				staff.white[sy].clear(sx, beat);
+			}else if(t - sx == 120){
+				staff.white[sy].clear(sx, beat);
+				line.save();
+				line.beginPath();
+				for(let i = 0; i < 5; i++){
+					line.moveTo(sx+70,15*(i+1)+100);
+					line.lineTo(sx+102,15*(i+1)+100);
+					line.moveTo(sx+70,15*(i+1)+100);
+					line.lineTo(sx+102,15*(i+1)+100);
+				};
+				line.stroke();
+				line.restore();
+			}else if(t - sx == 240){
+				staff.white[sy].clear(sx, beat);
+				line.save();
+				line.beginPath();
+				for(let i = 0; i < 5; i++){
+					line.moveTo(sx+70,15*(i+1)+100);
+					line.lineTo(sx+102,15*(i+1)+100);
+					line.moveTo(sx+70,15*(i+1)+100);
+					line.lineTo(sx+102,15*(i+1)+100);
+				};
+				line.stroke();
+				line.restore();
+			}
+			if(bit == 1){
+				if(t - sx >= 240){
+					staff.white[sy].beat1(sx, beat);
+				}else if(t - sx >= 120){
+					staff.white[sy].beat2(sx, beat);
+				}else if(t - sx >= 60){
+					staff.white[sy].beat4(sx, beat);
+				}else if(flag && t - sx >= 30){
+					staff.white[sy].beat8(sx, beat);
+				}else{
+					staff.white[sy].beat16(sx, beat);
+				}
+			}else if(staff.black[sy]){
+				if(t - sx >= 240){
+					staff.black[sy].beat1(sx, beat);
+				}else if(t - sx >= 120){
+					staff.black[sy].beat2(sx, beat);
+				}else if(t - sx >= 60){
+					staff.black[sy].beat4(sx, beat);
+				}else if(flag && t - sx >= 30){
+					staff.black[sy].beat8(sx, beat);
+				}else{
+					staff.black[sy].beat16(sx, beat);
+				}
+				staff.black[sy].sharp(sx, beat);
+			}
+			if(sy % 2){
+				line.strokeStyle = 'black';
+				line.save();
+				line.beginPath();
+				line.moveTo(sx+70,197.5-sy*7.5);
+				line.lineTo(sx+90,197.5-sy*7.5);
+				line.stroke();
+				line.restore();
+			}else if(sy == 14){
+				line.strokeStyle = 'black';
+				line.save();
+				line.beginPath();
+				line.moveTo(sx+70,100);
+				line.lineTo(sx+90,100);
+				line.stroke();
+				line.restore();
+			}
+		}
+////////////////////////////描画2回目
+		if((sx_p + 30 > sx) && t < 945 && sy_p){
+			if(p == 1){
+				if(pb == 16){
+					staff.white[sy_p].beat16(sx_p, beat);
+				}else if(pb == 8){
+					staff.white[sy_p].beat8(sx_p, beat);
+				}else if(pb == 4){
+					staff.white[sy_p].beat4(sx_p, beat);
+				}else if(pb == 2){
+					staff.white[sy_p].beat2(sx_p, beat);
+				}else if(pb == 1){
+					staff.white[sy_p].beat1(sx_p, beat);
+				}
+			}else if(staff.black[sy_p]){
+				if(pb == 16){
+					staff.black[sy_p].beat16(sx_p, beat);
+				}else if(pb == 8){
+					staff.black[sy_p].beat8(sx_p, beat);
+				}else if(pb == 4){
+					staff.black[sy_p].beat4(sx_p, beat);
+				}else if(pb == 2){
+					staff.black[sy_p].beat2(sx_p, beat);
+				}else if(pb == 1){
+					staff.black[sy_p].beat1(sx_p, beat);
+				}
+				staff.black[sy_p].sharp(sx_p, beat);
+			}
+			if(sy_p % 2){
+				line.strokeStyle = 'black';
+				line.save();
+				line.beginPath();
+				line.moveTo(sx_p+70,197.5-sy_p*7.5);
+				line.lineTo(sx_p+90,197.5-sy_p*7.5);
+				line.stroke();
+				line.restore();
+			}else if(sy_p == 14){
+				line.strokeStyle = 'black';
+				line.save();
+				line.beginPath();
+				line.moveTo(sx_p+70,100);
+				line.lineTo(sx_p+90,100);
+				line.stroke();
+				line.restore();
+			}
+		}
+		line.strokeStyle = 'black';
+		line.save();
+		line.beginPath();
+		if(t == 0){
+			for(let i = 0; i < 5; i++){
+				line.moveTo(0,15*(i+1)+100);
+				line.lineTo(1040,15*(i+1)+100);
+				line.moveTo(0,15*(i+1)+100);
+				line.lineTo(1040,15*(i+1)+100);
+			};
+		}else{
+			line.strokeStyle = 'black';
+			line.beginPath();
+			for(let i = 0; i < 5; i++){
+				line.moveTo(t,15*(i+1)+100);
+				line.lineTo(t+80,15*(i+1)+100);
+			};
+		};
+		for(let i = 1; i < 5; i++){
+			line.moveTo(70+240*i,115);
+			line.lineTo(70+240*i,175);
+		};
+		line.stroke();
+		line.fillRect(1035,114,5,62);
+		
+		t = (t+1.5) % 960;
+		if(t >= 945){sx = -15; sy = 0;}
+		line.beginPath();
+		line.strokeStyle = 'red';
+		line.moveTo(t + 80, 80);
+		line.lineTo(t + 80, 210);
+		line.stroke();
+		line.restore();
+	}, 10);
+	let timer = new Object();
+	var beat = board.getContext('2d');
+	staff.white = new Object();
+	staff.black = new Object();
+	for(var i in key.white){
+		staff.white[i] = new Staff(i);
+	}
+	for(var i in key.black){
+		staff.black[i] = new Staff(i);
+	}
+	canvas.addEventListener("mousedown", e => {
+		e.preventDefault();
+		const rect = canvas.getBoundingClientRect();
+		const point = {
+			x: e.clientX - rect.left,
+			y: e.clientY - rect.top
+		};
+		for(var i in key.white){
+			if(key.white[i].check(point)){
+				freq = key.white[i].getOnkai();
+				key.white[i].flag(context, canvas);
+				if(t < 945 && sx + 15 < t){
+					sx_p = sx;
+					sy_p = sy;
+					pb = check_beat(t - sx);
+					sx = t;
+					sy = i;
+					flag = 1;
+					bit = flag;
+				}
+			};
+		};
+		for(var i in key.black){
+			if(key.black[i].check(point)){
+				freq = key.black[i].getOnkai();
+				key.black[i].flag(context, canvas);
+				if(t < 945 && sx + 15 < t){
+					sx_p = sx;
+					sy_p = sy;
+					pb = check_beat(t - sx);
+					sx = t;
+					sy = i;
+					flag = 2;
+					bit = flag;
+				}
+			};
+		};
+	});
+	let swap = 0;
+	canvas.addEventListener("mousemove", e => {
+		e.preventDefault();
+		const rect = canvas.getBoundingClientRect();
+		const point = {
+			x: e.clientX - rect.left,
+			y: e.clientY - rect.top
+		};
+		if(flag){
+			swap = 0;
+			if(flag == 1 && key.white[sy] && key.white[sy].check(point) == 0){
+				swap = 1;
+			}else if(flag == 2 && key.black[sy] && key.black[sy].check(point) == 0){
+				swap = 2;
+			}
+			for(var i in key.white){
+				if(key.white[i].check(point)){
+					key.white[i].flag(context, canvas);
+					flag = 1;
+					if(swap && t < 945 && sx + 15 < t){
+						sx_p = sx;
+						sy_p = sy;
+						pb = check_beat(t - sx);
+						sx = t;
+						sy = i;
+						p = bit;
+						bit = flag;
+					}
+				}else{
+					key.white[i].normal(context, canvas);
+				};
+			};
+			for(var i in key.black){
+				if(key.black[i].check(point)){
+					key.black[i].flag(context, canvas);
+					flag = 2;
+					if(swap && t < 945 && sx + 15 < t){
+						sx_p = sx;
+						sy_p = sy;
+						pb = check_beat(t - sx);
+						sx = t;
+						sy = i;
+						p = bit;
+						bit = flag;
+					}
+				}else{
+					key.black[i].normal(context, canvas);
+				};
+			};
+		};
+	});
+	canvas.addEventListener("mouseup", e => {
+		e.preventDefault();
+		for(var i in key.white){
+			key.white[i].normal(context, canvas);
+		};
+		for(var i in key.black){
+			key.black[i].normal(context, canvas);
+		};
+		flag = 0;
+	});
+	// 一定の間隔で周波数のデータを送信
+	const interval = 1000;
+	setInterval(() => {
+		axios.post("/freq", {
+			freq: freq
+		})
+		.then(res => {
+			console.log(res.data)
+		})
+		.catch(err => {
+			console.log(err)
+		})
+	}, interval)
+}
+
+function check_beat(b){
+	if(b < 30){return 16;}
+	if(b < 60){return 8;}
+	if(b < 120){return 4;}
+	if(b < 240){return 2};
+	return 1;
+}
+
+onload = function(){
+	piano();
+}
+</script>
+<title>ピアノ</title>
+</head>
+
+<body>
+<br>
+<h1 align = "center" id = "title">ピアノ</h1>
+<div class = "piano" id = "main">
+<canvas id = "sample" width = "720" height = "350"></canvas>
+</div>
+<div class = "staff">
+<div class = "line"></div>
+<canvas id = "board" width = "1045" height = "300" style = "background-color:rgba(255,255,255,1);"></canvas>
+</div>
+</body>
+
+</html>
