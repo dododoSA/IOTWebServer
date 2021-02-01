@@ -166,8 +166,8 @@ class Right extends BaseKey {
 }
 ////////////////////////////黒鍵
 class Black extends BaseKey {
-	constructor(x){
-		super(x);
+	constructor(x, onkai){
+		super(x, onkai);
 	}
 	
 	normal(context, canvas){
@@ -451,8 +451,8 @@ function piano() {
 	for(let i = 1; i < 14; i++){
 		if(i != 3 && i != 7 && i != 10){
 			key.black[i] = new Black(20+i*47, onkaiListB[onkaiInd]);
+			onkaiInd++;
 		}
-		onkaiInd++;
 	}
 	for(var i in key.white){
 		key.white[i].normal(context, canvas);
@@ -740,7 +740,7 @@ function piano() {
 		flag = 0;
 	});
 	// 一定の間隔で周波数のデータを送信
-	const interval = 1000;
+	const interval = 500;
 	setInterval(() => {
 		axios.post("/freq", {
 			freq: freq

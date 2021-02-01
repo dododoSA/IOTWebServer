@@ -23,4 +23,4 @@ def getAction():
         return freq
 
 
-app.run(host="127.0.0.1", port=8000)
+app.run(host="192.168.0.16", port=8000)

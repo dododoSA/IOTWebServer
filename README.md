@@ -13,7 +13,20 @@ pip install Flask
 python server.py
 ```
 
-http://127.0.0.1:8000/ にアクセス
+自分のPCのIPアドレスに書き換える
+
+```python
+app.run(host="自分のPCのIPアドレス", port=8000)
+```
+
+main.cpp
+
+```cpp
+#define WEB_SERVER "自分のPCのIPアドレス"
+#define WEB_URL "http://自分のPCのIPアドレス:8000/freq"
+```
+
+http://自分のPCのIPアドレス:8000/ にアクセス(スマホからでも可能)
 
 
 ## パラメータについて
